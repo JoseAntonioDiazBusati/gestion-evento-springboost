@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface EventoRepo extends JpaRepository<Evento, Long> {
 
-    List<Evento> EncontrarPorTitulo(String titulo);
+    List<Evento> findByTitulo(String titulo);
 
 }
