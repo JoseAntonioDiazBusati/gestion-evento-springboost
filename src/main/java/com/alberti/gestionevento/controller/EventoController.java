@@ -2,6 +2,8 @@ package com.alberti.gestionevento.controller;
 
 import com.alberti.gestionevento.model.Evento;
 import com.alberti.gestionevento.repo.EventoRepo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -11,39 +13,47 @@ import java.util.List;
 
 public class EventoController {
 
-    private final EventoRepo eventoRepository;
-
-    public EventoController(EventoRepo eventoRepository) {
-        this.eventoRepository = eventoRepository;
-    }
+    @Autowired
+    private EventoRepo eventoRepository;
 
     @GetMapping
-    public List<Evento> getAll() {
+    public List<Evento> getAllEventos() {
         return eventoRepository.findAll();
     }
 
     @GetMapping("/{id}")
-    public Evento getById(@PathVariable Long id) {
-        return eventoRepository.findById(id).orElse(null);
+    public ResponseEntity<Evento> getEventoById(@PathVariable Long id) {
+        return eventoRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Evento create(@RequestBody Evento evento) {
+    public Evento createEvento(@RequestBody Evento evento) {
         return eventoRepository.save(evento);
     }
 
     @PutMapping("/{id}")
-    public Evento update(@PathVariable Long id, @RequestBody Evento evento) {
-        evento.setId(id);
-        return eventoRepository.save(evento);
+    public ResponseEntity<Evento> updateEvento(@PathVariable Long id, @RequestBody Evento eventoDetails) {
+        return eventoRepository.findById(id).map(evento -> {
+            evento.setTitulo(eventoDetails.getTitulo());
+            evento.setDescripcion(eventoDetails.getDescripcion());
+            evento.setFecha(eventoDetails.getFecha());
+            return ResponseEntity.ok(eventoRepository.save(evento));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        eventoRepository.deleteById(id);
+    public ResponseEntity<Void> deleteEvento(@PathVariable Long id) {
+        if (eventoRepository.existsById(id)) {
+            eventoRepository.deleteById(id);
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Consulta adicional
+
     @GetMapping("/buscar")
     public List<Evento> buscarPorTitulo(@RequestParam String titulo) {
         return eventoRepository.findByTitulo(titulo);
